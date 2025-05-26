@@ -26,7 +26,6 @@ public class MappingProfile: Profile
         CreateMap<UpdateChatDto, ChatEntity>()
             .ForMember(dest => dest.Id, opt => opt.Ignore()); // Не обновляем ID
 
-        // Маппинг для участников
         CreateMap<ChatParticipantEntity, ChatParticipantDto>();
         CreateMap<AddParticipantDto, ChatParticipantEntity>();
 

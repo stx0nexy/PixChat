@@ -161,7 +161,7 @@ export const MessageList = ({
           src={fileUrl}
           alt={fileNameWithExtension}
           sx={{
-            maxWidth: '200px', // Ограничение размера миниатюры
+            maxWidth: '200px',
             maxHeight: '200px',
             borderRadius: '5px',
             cursor: 'pointer',
@@ -275,10 +275,10 @@ export const MessageList = ({
           mt: '44px',
           display: 'flex',
           flexDirection: 'column',
-          backgroundImage: `url(${backgroundImage})`, // Установка фонового изображения
-          backgroundSize: 'cover', // Растягивает изображение на весь контейнер
-          backgroundPosition: 'center', // Центрирует изображение
-          backgroundRepeat: 'no-repeat', // Убирает повторение
+          backgroundImage: `url(${backgroundImage})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
         }}
       >
         {filteredMessages.map((item, index) => {
@@ -321,8 +321,8 @@ export const MessageList = ({
                       <Typography variant="body1" sx={{ color: '#61082b', mb: 0.5, fontWeight: 'bold' }}>
                         {senderData.username}
                       </Typography>
-                      {item.message ? (
-                        <Typography variant="body1">{item.message}</Typography>
+                      {item.decryptedMessage ? (
+                        <Typography variant="body1">{item.decryptedMessage}</Typography>
                       ) : (
                         renderFile(item)
                       )}
@@ -343,8 +343,8 @@ export const MessageList = ({
                     wordWrap: 'break-word',
                   }}
                 >
-                  {item.message ? (
-                    <Typography variant="body1">{item.message}</Typography>
+                  {item.decryptedMessage  ? (
+                    <Typography variant="body1">{item.decryptedMessage }</Typography>
                   ) : (
                     renderFile(item)
                   )}
@@ -359,7 +359,6 @@ export const MessageList = ({
         <div ref={messagesEndRef} />
       </Box>
 
-      {/* Модальное окно для увеличенного изображения */}
       <Modal
         open={openImageModal}
         onClose={handleCloseModal}

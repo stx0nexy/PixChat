@@ -525,7 +525,7 @@ const Chat = ({ user, token, onLogout }) => {
         const newMsg = {
           senderId,
           receiverId: receiverProfile?.email || user.email,
-          message: decodedMessage,
+          decryptedMessage: decodedMessage,
           timestamp: timestamp || new Date().toISOString(),
         };
         console.log('New message received:', newMsg);
@@ -727,7 +727,7 @@ const Chat = ({ user, token, onLogout }) => {
       );
       const newMsg = {
         senderId,
-        message: decodedMessage,
+        decryptedMessage: decodedMessage,
         timestamp: timestamp || new Date().toISOString(),
         chatId: chatId || null,
       };
@@ -1070,7 +1070,7 @@ const Chat = ({ user, token, onLogout }) => {
         const newMsg = {
           senderId: user.email,
           receiverId: receiverEmail,
-          message,
+          decryptedMessage: message,
           timestamp: new Date().toISOString(),
           isRead: false,
           isSent: false
@@ -1094,7 +1094,7 @@ const Chat = ({ user, token, onLogout }) => {
             userId: user.id,
             senderId: user.email,
             receiverId: receiverEmail,
-            message,
+            decryptedMessage: message,
             timestamp: newMsg.timestamp,
             isRead: true,
             isSent: true
@@ -1114,7 +1114,7 @@ const Chat = ({ user, token, onLogout }) => {
           senderId: user.email,
           chatId: receiverChatId,
           receiverId: null,
-          message,
+          decryptedMessage: message,
           timestamp: new Date().toISOString(),
           isRead: false,
           isSent: false
@@ -1134,7 +1134,7 @@ const Chat = ({ user, token, onLogout }) => {
           userId: user.id,
           senderId: user.email,
           chatId: receiverChatId,
-          message,
+          decryptedMessage: message,
           timestamp: newMsg.timestamp,
           isRead: true,
           isSent: true
@@ -1166,7 +1166,7 @@ const Chat = ({ user, token, onLogout }) => {
         const newMsg = {
           senderId: user.email,
           receiverId: user.email,
-          message,
+          decryptedMessage: message,
           timestamp: new Date().toISOString(),
           isRead: false,
           isSent: false
@@ -1191,7 +1191,7 @@ const Chat = ({ user, token, onLogout }) => {
             userId: user.id,
             senderId: user.email,
             receiverId: user.email,
-            message,
+            decryptedMessage: message,
             timestamp: newMsg.timestamp,
             isRead: true,
             isSent: true

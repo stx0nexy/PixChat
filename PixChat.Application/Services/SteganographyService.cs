@@ -62,7 +62,7 @@ public class SteganographyService : ISteganographyService
         }
     }
 
-    public (string message, string encryptionKey, int messageLength, DateTime timestamp) ExtractFullMessage(byte[] image, string key)
+    public (byte[] message, string encryptionKey, int messageLength, DateTime timestamp, string encryptedAESKey, byte[] aesIV) ExtractFullMessage(byte[] image, string key)
     {
         using (var memoryStream = new MemoryStream(image))
         using (var bitmap = new Bitmap(memoryStream))
@@ -118,16 +118,19 @@ public class SteganographyService : ISteganographyService
             _logger.LogInformation($"Extracted full message: {fullMessage}");
             string[] parts = fullMessage.Split('|');
 
-            if (parts.Length != 3)
+            if (parts.Length != 5)
             {
-                _logger.LogError($"Invalid steganography data format. Expected 3 parts, got {parts.Length}. Full message: '{fullMessage}'");
+                _logger.LogError($"Invalid steganography data format. Expected 5 parts, got {parts.Length}. Full message: '{fullMessage}'");
                 throw new FormatException($"Invalid steganography data format. Expected 3 parts, got {parts.Length}.");
             }
 
+            
             int messageLength = int.Parse(parts[0]);
-            string message = parts[1].Replace("\\|", "|");
+            byte[] message = Convert.FromBase64String(parts[1]);
             DateTime timestamp;
-
+            string encryptedAESKey = parts[3];
+            byte[] aesIV = Convert.FromBase64String(parts[4]);
+            
             try
             {
                 timestamp = DateTime.Parse(parts[2]);
@@ -143,7 +146,7 @@ public class SteganographyService : ISteganographyService
                 _logger.LogWarning($"Message length mismatch: expected {messageLength}, got {message.Length}");
             }
 
-            return (message, null, messageLength, timestamp);
+            return (message, null, messageLength, timestamp, encryptedAESKey, aesIV);
         }
     }
 

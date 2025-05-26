@@ -21,7 +21,6 @@ public class ChatController : ControllerBase
         _logger = logger;
     }
 
-    // Получить все чаты
     [HttpGet]
     [Authorize]
     public async Task<ActionResult<IEnumerable<ChatDto>>> GetAllChats()
@@ -38,7 +37,6 @@ public class ChatController : ControllerBase
         }
     }
 
-    // Получить чат по ID
     [HttpGet("{id}")]
     [Authorize]
     public async Task<ActionResult<ChatDto>> GetChatById(int id)
@@ -59,7 +57,6 @@ public class ChatController : ControllerBase
         }
     }
 
-    // Получить приватный чат между двумя пользователями
     [HttpGet("private/{userId}/{contactUserId}")]
     [Authorize]
     public async Task<ActionResult<ChatDto?>> GetPrivateChatIfExists(int userId, int contactUserId)
@@ -80,7 +77,6 @@ public class ChatController : ControllerBase
         }
     }
 
-    // Создать чат (групповой)
     [HttpPost]
     [Authorize]
     public async Task<IActionResult> CreateChat([FromBody] CreateChatDto dto)
@@ -97,7 +93,6 @@ public class ChatController : ControllerBase
         }
     }
 
-    // Обновить чат
     [Authorize]
     [HttpPut]
     public async Task<IActionResult> UpdateChat([FromBody] UpdateChatDto dto)
@@ -114,7 +109,6 @@ public class ChatController : ControllerBase
         }
     }
 
-    // Удалить чат
     [Authorize]
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteChat(int id)
@@ -131,7 +125,6 @@ public class ChatController : ControllerBase
         }
     }
 
-    // Добавить участника в чат
     [Authorize]
     [HttpPost("add-participant")]
     public async Task<IActionResult> AddParticipant([FromBody] AddParticipantDto dto)
@@ -148,7 +141,6 @@ public class ChatController : ControllerBase
         }
     }
 
-    // Удалить участника из чата
     [Authorize]
     [HttpDelete("remove-participant/{participantId}")]
     public async Task<IActionResult> RemoveParticipant(int participantId)
@@ -165,7 +157,6 @@ public class ChatController : ControllerBase
         }
     }
 
-    // Получить участников чата по ID
     [Authorize]
     [HttpGet("participants/{chatId}")]
     public async Task<ActionResult<IEnumerable<UserDto>>> GetParticipantsByChatId(int chatId)

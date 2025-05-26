@@ -26,7 +26,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSignalR(options =>
 {
-    options.MaximumReceiveMessageSize = 10 * 1024 * 1024; // 10 MB
+    options.MaximumReceiveMessageSize = 10 * 1024 * 1024;
 });
 
 builder.Services.AddApplicationServices();
@@ -118,21 +118,12 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigins", builder =>
     {
-        builder.WithOrigins("http://localhost:3000") // Ваш фронтенд URL
+        builder.WithOrigins("http://localhost:3000")
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
     });
 });
-
-/*builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowSpecificOrigin",
-        corsBuilder => corsBuilder.WithOrigins("http://localhost:3000")
-            .AllowCredentials() 
-            .AllowAnyHeader() 
-            .AllowAnyMethod()); 
-});*/
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>

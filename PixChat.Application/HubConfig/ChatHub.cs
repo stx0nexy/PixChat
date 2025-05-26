@@ -58,12 +58,36 @@ namespace PixChat.Application.HubConfig
                 _logger.LogInformation($"SendMessage invoked by senderId: {dynamicKey}");
                 byte[] image = _steganographyService.GetRandomImage();
 
-                string escapedMessage = message.Replace("|", "\\|");
-                string fullMessage = $"{escapedMessage.Length}|{escapedMessage}|{timestamp:O}|X7K9P2M|";
-                byte[] stegoImage = _steganographyService.EmbedMessage(image, fullMessage, dynamicKey);
+                byte[] messageBytes = Encoding.UTF8.GetBytes(message);
+                var (encryptedMessage, aesKey, aesIV) = await _encryptionService.EncryptDataAsync(messageBytes);
 
                 if (isOneTime)
                 {
+                    var receiverUser = await _userService.GetByEmailAsync(receiverId);
+                    if (receiverUser == null)
+                    {
+                        _logger.LogWarning($"Receiver with email {receiverId} not found.");
+                        throw new ArgumentException($"Пользователь с email {receiverId} не найден.");
+                    }
+
+                    var receiverPublicKey = await _keyService.GetPublicKeyAsync(receiverUser.Id);
+                    if (string.IsNullOrEmpty(receiverPublicKey))
+                    {
+                        _logger.LogError($"Public key for receiver {receiverId} is null or empty.");
+                        throw new InvalidOperationException($"Публичный ключ для {receiverId} не найден.");
+                    }
+                    _logger.LogInformation($"Receiver public key: {receiverPublicKey}");
+
+                    var encryptedAESKey = _encryptionService.EncryptAESKeyWithRSA(aesKey, receiverPublicKey);
+                    
+                    string fullMessage = $"{encryptedMessage.Length}|" +
+                                         $"{Convert.ToBase64String(encryptedMessage)}|" +
+                                         $"{timestamp:O}|" +
+                                         $"{encryptedAESKey}|" +
+                                         $"{Convert.ToBase64String(aesIV)}|" +
+                                         $"X7K9P2M|";
+                    byte[] stegoImage = _steganographyService.EmbedMessage(image, fullMessage, dynamicKey);
+                    
                     var messageId = await _oneTimeMessageService.SendMessageAsync(senderId, receiverId, chatId, stegoImage, "test", 0, timestamp, false);
                     if (ConnectedUsers.TryGetValue(receiverId, out var receiver))
                     {
@@ -75,11 +99,47 @@ namespace PixChat.Application.HubConfig
                         _logger.LogInformation($"One-time message saved for receiverId: {receiverId}");
                     }
                 }
-                else if (receiverId == null) // Групповой чат
+                else if (receiverId == null)
                 {
                     var participants = await _chatService.GetParticipantsByChatIdAsync(chatId);
                     foreach (var participant in participants)
                     {
+                        if (participant.Email == senderId) continue;
+
+                        var participantUser = await _userService.GetByEmailAsync(participant.Email);
+                        if (participantUser == null)
+                        {
+                            _logger.LogWarning($"Participant with email {participant.Email} not found in chat {chatId}. Skipping.");
+                            continue;
+                        }
+
+                        var participantPublicKey = await _keyService.GetPublicKeyAsync(participantUser.Id);
+                        if (string.IsNullOrEmpty(participantPublicKey))
+                        {
+                            _logger.LogError($"Public key for participant {participant.Email} is null or empty in chat {chatId}. Skipping.");
+                            continue;
+                        }
+                        _logger.LogInformation($"Participant public key for {participant.Email}: {participantPublicKey}");
+
+                        string encryptedAESKey;
+                        try
+                        {
+                            encryptedAESKey = _encryptionService.EncryptAESKeyWithRSA(aesKey, participantPublicKey);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, $"Failed to encrypt AES key for participant {participant.Email} in chat {chatId}.");
+                            continue;
+                        }
+                        
+                        string fullMessage = $"{encryptedMessage.Length}|" +
+                                             $"{Convert.ToBase64String(encryptedMessage)}|" +
+                                             $"{timestamp:O}|" +
+                                             $"{encryptedAESKey}|" +
+                                             $"{Convert.ToBase64String(aesIV)}|" +
+                                             $"X7K9P2M|";
+                        byte[] stegoImage = _steganographyService.EmbedMessage(image, fullMessage, dynamicKey);
+
                         if (ConnectedUsers.TryGetValue(participant.Email, out var receiver))
                         {
                             await Clients.Client(receiver.ConnectionId).SendAsync("ReceiveGroupMessage", chatId, senderId, Convert.ToBase64String(stegoImage));
@@ -106,6 +166,32 @@ namespace PixChat.Application.HubConfig
                 }
                 else if (!string.IsNullOrEmpty(receiverId))
                 {
+                    var receiverUser = await _userService.GetByEmailAsync(receiverId);
+                    if (receiverUser == null)
+                    {
+                        _logger.LogWarning($"Receiver with email {receiverId} not found.");
+                        throw new ArgumentException($"Пользователь с email {receiverId} не найден.");
+                    }
+
+                    var receiverPublicKey = await _keyService.GetPublicKeyAsync(receiverUser.Id);
+                    if (string.IsNullOrEmpty(receiverPublicKey))
+                    {
+                        _logger.LogError($"Public key for receiver {receiverId} is null or empty.");
+                        throw new InvalidOperationException($"Публичный ключ для {receiverId} не найден.");
+                    }
+                    _logger.LogInformation($"Receiver public key: {receiverPublicKey}");
+
+                    var encryptedAESKey = _encryptionService.EncryptAESKeyWithRSA(aesKey, receiverPublicKey);
+                    
+                    string fullMessage = $"{encryptedMessage.Length}|" +
+                                         $"{Convert.ToBase64String(encryptedMessage)}|" +
+                                         $"{timestamp:O}|" +
+                                         $"{encryptedAESKey}|" +
+                                         $"{Convert.ToBase64String(aesIV)}|" +
+                                         $"X7K9P2M|";
+                    byte[] stegoImage = _steganographyService.EmbedMessage(image, fullMessage, dynamicKey);
+
+                    
                     if (ConnectedUsers.TryGetValue(receiverId, out var receiver))
                     {
                         await Clients.Client(receiver.ConnectionId).SendAsync("ReceiveMessage", chatId, senderId, Convert.ToBase64String(stegoImage));

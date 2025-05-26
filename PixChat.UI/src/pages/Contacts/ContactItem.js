@@ -90,9 +90,9 @@ const ContactItem = ({
         });
 
         if (sortedMessages.length > 0) {
-          setLastMessage(sortedMessages[0].message);
+          setLastMessage(sortedMessages[0].decryptedMessage);
           const unreadMessages = sortedMessages.filter(
-            message => !message.isRead && message.senderId === contactUser.email
+            decryptedMessage => !decryptedMessage.isRead && decryptedMessage.senderId === contactUser.email
           );
           setUnreadMessageCount(unreadMessages.length);
         } else {
@@ -221,7 +221,9 @@ const ContactItem = ({
         secondary={
           <Typography component="div" style={{ marginTop: '4px', display: 'flex', alignItems: 'center' }}>
             <Typography component="span" variant="body2" color={unreadMessageCount > 0 ? 'primary' : 'text.secondary'}>
-              {lastMessage.length > 40 ? `${lastMessage.substring(0, 40)}...` : lastMessage}
+                {typeof lastMessage === 'string' && lastMessage.length > 40
+                    ? `${lastMessage.substring(0, 40)}...`
+                    : lastMessage}
             </Typography>
             {unreadMessageCount > 0 && <Badge badgeContent={unreadMessageCount} color="secondary" sx={{ ml: 2 }} />}
             {unreadOneTimeMessageCount > 0 && (

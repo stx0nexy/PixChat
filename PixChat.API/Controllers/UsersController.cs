@@ -83,14 +83,15 @@ public class UsersController : ControllerBase
         try
         {
             byte[] image = Convert.FromBase64String(request.Base64Image);
-            var (message, _, messageLength, timestamp) = _steganographyService.ExtractFullMessage(image, request.EncryptedKey);
+            var (message, _, messageLength, timestamp, encryptedAesKey, aesIv ) = _steganographyService.ExtractFullMessage(image, request.EncryptedKey);
 
-            // Возвращаем объект с именованными полями
             return Ok(new
             {
                 message,
                 messageLength,
-                timestamp
+                timestamp,
+                encryptedAesKey,
+                aesIv
             });
         }
         catch (Exception ex)

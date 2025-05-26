@@ -54,7 +54,7 @@ const ChatItem = ({ chat, onChatSelect, token, newMessage, onChatRemove }) => {
             console.log("Sorted Messages:", sortedMessages);
   
           if (sortedMessages.length > 0) {
-            setLastMessage(sortedMessages[0].message);
+            setLastMessage(sortedMessages[0].decryptedMessage);
             const unreadMessages = sortedMessages.filter(message => !message.isRead);
             setUnreadMessageCount(unreadMessages.length);
           } else {
@@ -124,8 +124,10 @@ const ChatItem = ({ chat, onChatSelect, token, newMessage, onChatRemove }) => {
           secondary={
             <Typography component="div" style={{ marginTop: '4px' }}>
               <Typography component="span" variant="body2" color={unreadMessageCount > 0 ? 'primary' : 'text.secondary'}>
-                {lastMessage.length > 40 ? `${lastMessage.substring(0, 40)}...` : lastMessage}
-              </Typography>
+                              {typeof lastMessage === 'string' && lastMessage.length > 40
+                                  ? `${lastMessage.substring(0, 40)}...`
+                                  : lastMessage}
+                          </Typography>
               <Badge badgeContent={unreadMessageCount} color="secondary" sx={{ ml: 2 }} />
             </Typography>
           }

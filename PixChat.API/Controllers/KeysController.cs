@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PixChat.Application.Interfaces.Services;
@@ -88,6 +89,35 @@ namespace PixChat.API.Controllers
 
                 var decryptedData = Convert.ToBase64String(ms.ToArray());
                 return Ok(decryptedData);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Error decrypting data", error = ex.Message });
+            }
+        }
+
+
+        [HttpPost("decrypt-message")]
+        public async Task<IActionResult> DecryptMessage([FromBody] DecryptDataRequest request)
+        {
+            try
+            {
+                using var aes = Aes.Create();
+                aes.Key = Convert.FromBase64String(request.Key);
+                aes.IV = Convert.FromBase64String(request.IV);
+
+                var encryptedData = Convert.FromBase64String(request.EncryptedData);
+                using var ms = new MemoryStream();
+                using (var cs = new CryptoStream(ms, aes.CreateDecryptor(), CryptoStreamMode.Write))
+                {
+                    await cs.WriteAsync(encryptedData, 0, encryptedData.Length);
+                    await cs.FlushFinalBlockAsync();
+                }
+
+                var decryptedBytes = ms.ToArray();
+                var decryptedString = Encoding.UTF8.GetString(decryptedBytes);
+                
+                return Ok(decryptedString);
             }
             catch (Exception ex)
             {

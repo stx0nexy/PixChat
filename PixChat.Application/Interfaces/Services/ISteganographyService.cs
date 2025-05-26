@@ -6,7 +6,7 @@ public interface ISteganographyService
     byte[] EmbedMessage(byte[] image, string message, string key);
 
 
-    (string message, string encryptionKey, int messageLength, DateTime timestamp) ExtractFullMessage(byte[] image, string key);
+    (byte[] message, string encryptionKey, int messageLength, DateTime timestamp, string encryptedAESKey, byte[] aesIV) ExtractFullMessage(byte[] image, string key);
 
 
     byte[] GetRandomImage();
