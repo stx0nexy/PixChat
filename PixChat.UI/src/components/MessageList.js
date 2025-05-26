@@ -389,7 +389,7 @@ export const MessageList = ({
               startIcon={<DownloadIcon />}
               sx={{ bgcolor: '#61082b', '&:hover': { bgcolor: '#8b0c3f' } }}
             >
-              Скачать
+              Download
             </Button>
           </Box>
         </Box>

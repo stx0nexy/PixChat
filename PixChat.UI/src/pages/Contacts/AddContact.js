@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Box, IconButton, Modal } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { AddContactM } from '../../components/AddContact';
+import { AddContactModal } from '../../components/AddContactModal';
 
 const AddContact = ({ connection, onClose, user, token }) => {
 
@@ -62,7 +62,7 @@ const AddContact = ({ connection, onClose, user, token }) => {
           <IconButton onClick={onClose} sx={{ position: 'absolute', top: 10, right: 10 }}>
             <CloseIcon />
           </IconButton>
-          <AddContactM 
+          <AddContactModal
             newContactId={newContactId}
             setNewContactId={setNewContactId}
             onAddContact={addContact}

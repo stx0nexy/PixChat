@@ -1,7 +1,5 @@
-import React from 'react';
-import { Grid, Typography, Button, Menu, MenuItem, IconButton } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
-import AddIcon from '@mui/icons-material/Add';
+import { Grid, Typography} from '@mui/material';
+
 
 export const ChatHeader = ({ onMenuClick, onProfileClick, onLogout, onAddContactClick, anchorEl, open, onClose, onCreateChat }) => (
   <Grid container spacing={2}>

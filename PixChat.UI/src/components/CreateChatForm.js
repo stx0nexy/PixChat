@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button, TextField, List, ListItem, Checkbox, FormControlLabel, Box, IconButton } from '@mui/material';
+import { Button, TextField, List, ListItem, Checkbox, FormControlLabel, Box, IconButton, Alert, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
 const CreateChatForm = ({ user, contacts, onClose, token }) => {
@@ -9,6 +9,8 @@ const CreateChatForm = ({ user, contacts, onClose, token }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [contactNames, setContactNames] = useState({});
   const [contactsLoaded, setContactsLoaded] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [generalError, setGeneralError] = useState('');
 
   useEffect(() => {
     const fetchContactNames = async () => {
@@ -40,6 +42,7 @@ const CreateChatForm = ({ user, contacts, onClose, token }) => {
         setContactsLoaded(true);
       } catch (error) {
         console.error('Error fetching contacts:', error);
+        setGeneralError('Error loading contacts.');
       }
     };
 
@@ -47,6 +50,19 @@ const CreateChatForm = ({ user, contacts, onClose, token }) => {
   }, [contacts, token]);
 
   const handleCreate = async () => {
+    setErrors({});
+    setGeneralError('');
+    setIsLoading(true);
+
+    if (selectedParticipants.length < 2) {
+      setErrors(prevErrors => ({
+        ...prevErrors,
+        ParticipantIds: ['Please select at least 2 participants.'],
+      }));
+      setIsLoading(false);
+      return;
+    }
+
     const chatData = {
       Name: chatName,
       Description: chatDescription,
@@ -56,7 +72,6 @@ const CreateChatForm = ({ user, contacts, onClose, token }) => {
     };
 
     try {
-      setIsLoading(true);
       const response = await fetch(`http://localhost:5038/api/Chat`, {
         method: 'POST',
         headers: {
@@ -67,17 +82,26 @@ const CreateChatForm = ({ user, contacts, onClose, token }) => {
       });
 
       if (!response.ok) {
+        const errorData = await response.json();
+        if (errorData.errors) {
+          setErrors(errorData.errors);
+        } else if (errorData.detail) {
+          setGeneralError(errorData.detail);
+        } else {
+          setGeneralError('Failed to create chat.');
+        }
         throw new Error('Failed to create chat');
       }
 
       setChatName('');
       setChatDescription('');
       setSelectedParticipants([]);
-
       onClose();
     } catch (error) {
       console.error('Failed to create chat:', error);
-      alert('Error occurred while creating chat. Please try again.');
+      if (Object.keys(errors).length === 0 && !generalError) {
+        setGeneralError('Error occurred while creating chat. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -86,7 +110,10 @@ const CreateChatForm = ({ user, contacts, onClose, token }) => {
   return (
     <Box
       sx={{
-        position: 'relative',
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
         p: 3,
         pt: 6,
         bgcolor: 'background.paper',
@@ -94,6 +121,8 @@ const CreateChatForm = ({ user, contacts, onClose, token }) => {
         boxShadow: 3,
         display: 'flex',
         flexDirection: 'column',
+        width: '100%',
+        maxWidth: 400,
       }}
     >
       <IconButton
@@ -108,12 +137,22 @@ const CreateChatForm = ({ user, contacts, onClose, token }) => {
         <CloseIcon />
       </IconButton>
 
+      <Typography variant="h6" gutterBottom>Create New Chat</Typography>
+
+      {generalError && (
+        <Alert severity="error" sx={{ marginBottom: 2 }}>
+          {generalError}
+        </Alert>
+      )}
+
       <TextField
         label="Chat Name"
         value={chatName}
         onChange={e => setChatName(e.target.value)}
         fullWidth
         margin="normal"
+        error={!!errors.Name}
+        helperText={errors.Name ? errors.Name[0] : ''}
       />
       <TextField
         label="Description"
@@ -121,27 +160,47 @@ const CreateChatForm = ({ user, contacts, onClose, token }) => {
         onChange={e => setChatDescription(e.target.value)}
         fullWidth
         margin="normal"
+        error={!!errors.Description}
+        helperText={errors.Description ? errors.Description[0] : ''}
       />
-      <List>
-        {contacts.map(contact => (
-          <ListItem key={contact.contactUserId}>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={selectedParticipants.includes(contact.contactUserId)}
-                  onChange={() => {
-                    if (selectedParticipants.includes(contact.contactUserId)) {
-                      setSelectedParticipants(selectedParticipants.filter(id => id !== contact.contactUserId));
-                    } else {
-                      setSelectedParticipants([...selectedParticipants, contact.contactUserId]);
-                    }
-                  }}
-                />
-              }
-              label={contactsLoaded ? contactNames[contact.contactUserId] || 'Unknown' : 'Loading...'}
-            />
-          </ListItem>
-        ))}
+      <Typography variant="subtitle1" sx={{ mt: 2 }}>Select Participants:</Typography>
+      {errors.ParticipantIds && (
+        <Typography color="error" variant="caption" sx={{ ml: 1 }}>
+          {errors.ParticipantIds[0]}
+        </Typography>
+      )}
+      <List sx={{ maxHeight: 200, overflow: 'auto', border: '1px solid #ccc', borderRadius: 1 }}>
+        {contactsLoaded ? (
+          contacts.map(contact => (
+            <ListItem key={contact.contactUserId} dense>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={selectedParticipants.includes(contact.contactUserId)}
+                    onChange={() => {
+                      if (errors.ParticipantIds) {
+                         setErrors(prevErrors => {
+                            const newErrors = { ...prevErrors };
+                            delete newErrors.ParticipantIds;
+                            return newErrors;
+                         });
+                      }
+
+                      if (selectedParticipants.includes(contact.contactUserId)) {
+                        setSelectedParticipants(selectedParticipants.filter(id => id !== contact.contactUserId));
+                      } else {
+                        setSelectedParticipants([...selectedParticipants, contact.contactUserId]);
+                      }
+                    }}
+                  />
+                }
+                label={contactNames[contact.contactUserId] || 'Unknown'}
+              />
+            </ListItem>
+          ))
+        ) : (
+          <ListItem><Typography>Loading contacts...</Typography></ListItem>
+        )}
       </List>
       <Button
         variant="contained"
@@ -152,7 +211,7 @@ const CreateChatForm = ({ user, contacts, onClose, token }) => {
       >
         {isLoading ? 'Creating...' : 'Create Chat'}
       </Button>
-      <Button variant="outlined" onClick={onClose} sx={{ mt: 1, ml: 1 }}>
+      <Button variant="outlined" onClick={onClose} sx={{ mt: 1 }}>
         Cancel
       </Button>
     </Box>

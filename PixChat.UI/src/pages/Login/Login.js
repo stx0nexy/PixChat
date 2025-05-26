@@ -1,13 +1,18 @@
 import React, { useState } from 'react';
-import { TextField, Button, Box } from '@mui/material';
+import { TextField, Button, Box, Alert } from '@mui/material';
 import axios from 'axios';
 
 const Login = ({ onAuthSuccess, setIsRegistering }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+   const [errors, setErrors] = useState({});
+  const [generalError, setGeneralError] = useState('');
+
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    setErrors({});
+    setGeneralError('');
     
     try {
       const response = await axios.post('http://localhost:5038/api/auth/login', {
@@ -19,11 +24,27 @@ const Login = ({ onAuthSuccess, setIsRegistering }) => {
       onAuthSuccess(user, token);
     } catch (error) {
       console.error('Authentication error:', error);
+      if (error.response && error.response.data) {
+        if (error.response.data.errors) {
+          setErrors(error.response.data.errors);
+        } else if (error.response.data.message) {
+          setGeneralError(error.response.data.message);
+        } else {
+          setGeneralError('An unexpected error occurred.');
+        }
+      } else {
+        setGeneralError('Network error or server unreachable.');
+      }
     }
   };
 
   return (
     <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      {generalError && (
+        <Alert severity="error" sx={{ marginBottom: 2, width: '100%' }}>
+          {generalError}
+        </Alert>
+      )}
       <TextField
         label="Email"
         type="email"
@@ -32,6 +53,8 @@ const Login = ({ onAuthSuccess, setIsRegistering }) => {
         required
         fullWidth
         sx={{ mb: 2 }}
+        error={!!errors.Email}
+        helperText={errors.Email ? errors.Email[0] : ''}
       />
       <TextField
         label="Password"
@@ -41,14 +64,16 @@ const Login = ({ onAuthSuccess, setIsRegistering }) => {
         required
         fullWidth
         sx={{ mb: 2 }}
+        error={!!errors.Password}
+        helperText={errors.Password ? errors.Password[0] : ''}
       />
       <Button type="submit" variant="contained" color="primary">
         Login
       </Button>
 
-      <Button 
-        variant="outlined" 
-        color="primary" 
+      <Button
+        variant="outlined"
+        color="primary"
         onClick={() => setIsRegistering(true)}
         sx={{ marginTop: 2 }}
       >

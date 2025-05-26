@@ -1,6 +1,8 @@
+using System.Reflection;
 using System.Text;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
@@ -30,6 +32,11 @@ builder.Services.AddSignalR(options =>
 });
 
 builder.Services.AddApplicationServices();
+
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+builder.Services.AddValidatorsFromAssembly(typeof(ApplicationServiceRegistration).Assembly);
+
 
 builder.Services.AddControllers(options =>
     {

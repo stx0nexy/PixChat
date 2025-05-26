@@ -62,15 +62,6 @@ const NewOneTimeMessages = ({ onClose, messages, connection, fulloneTimeMessage,
     console.log('ONE TIME Message read successfully.');
   };
 
-  const removeMessageFromIndexedDB = async (messageId) => {
-    try {
-      await db.oneTimeMessages.where('messageId').equals(messageId).delete();
-      console.log(`Message with ID ${messageId} deleted from IndexedDB`);
-    } catch (error) {
-      console.error('Error deleting message from IndexedDB:', error);
-    }
-  };
-
   return (
     <Box
       sx={{

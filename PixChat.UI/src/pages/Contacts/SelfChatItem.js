@@ -28,7 +28,7 @@ const SelfChatItem = ({ user, onSelfChatSelect, token, newMessage, newOneTimeMes
           .sortBy('timestamp');
 
         if (messages.length > 0) {
-          setLastMessage(messages[0].message);
+          setLastMessage(messages[0].decryptedMessage);
         } else {
           setLastMessage('No notes yet');
         }

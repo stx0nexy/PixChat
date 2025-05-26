@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { Box, TextField, Button, IconButton, Popover } from '@mui/material';
 import TimesOneMobiledataIcon from '@mui/icons-material/TimesOneMobiledata';
 import EmojiEmotionsIcon from '@mui/icons-material/EmojiEmotions';
-import AttachFileIcon from '@mui/icons-material/AttachFile'; // Иконка для прикрепления файла
+import AttachFileIcon from '@mui/icons-material/AttachFile';
 import EmojiPicker from 'emoji-picker-react';
 
 export const MessageInput = ({ message, setMessage, onSend, messageStatus, isGroupChat, onSendFile }) => {
   const [isOneTime, setIsOneTime] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
-  const [selectedFile, setSelectedFile] = useState(null); // Состояние для выбранного файла
+  const [selectedFile, setSelectedFile] = useState(null);
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey && message.trim()) {
@@ -30,14 +30,14 @@ export const MessageInput = ({ message, setMessage, onSend, messageStatus, isGro
     const file = event.target.files[0];
     if (file) {
       setSelectedFile(file);
-      handleSendFile(file); // Отправляем файл сразу после выбора
+      handleSendFile(file);
     }
   };
 
   const handleSendFile = (file) => {
     if (file) {
-      onSendFile(file); // Вызываем функцию отправки файла
-      setSelectedFile(null); // Сбрасываем выбранный файл
+      onSendFile(file);
+      setSelectedFile(null);
     }
   };
 

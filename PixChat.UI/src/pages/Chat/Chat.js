@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Paper, Box, Typography, List, ListItem, ListItemText, IconButton, Tooltip, Modal, Button, TextField } from '@mui/material';
+import { Paper, Box, Typography, List, ListItem, ListItemText, IconButton, Tooltip, Modal, Button, TextField, Snackbar, Alert } from '@mui/material';
 import { useSignalR } from '../../stores/useSignalR';
 import { ChatHeader } from '../../components/ChatHeader';
 import { MessageList } from '../../components/MessageList';
@@ -10,7 +10,6 @@ import ContactsList from '../Contacts/ContactsList';
 import { extractMessageFromImage } from '../../api/messageService';
 import db from '../../stores/db';
 import ViewProfile from '../Profile/ViewProfile';
-import CloseIcon from '@mui/icons-material/Close';
 import CheckIcon from '@mui/icons-material/Check';
 import CreateChatForm from '../../components/CreateChatForm';
 import axios from 'axios';
@@ -19,9 +18,9 @@ import PersonIcon from '@mui/icons-material/Person';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import GroupAddIcon from '@mui/icons-material/GroupAdd';
 import SettingsIcon from '@mui/icons-material/Settings';
-import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import SyncIcon from '@mui/icons-material/Sync';
+import CloseIcon from '@mui/icons-material/Close';
 
 const Chat = ({ user, token, onLogout }) => {
   const navigate = useNavigate();
@@ -35,7 +34,7 @@ const Chat = ({ user, token, onLogout }) => {
   const [receiverProfile, setReceiverProfile] = useState('');
   const [receiverNotes, setReceiverNotes] = useState('');
   const [messages, setMessages] = useState([]);
-  const [files, setFiles] = useState([]); // Состояние для файлов
+  const [files, setFiles] = useState([]);
   const [oneTimeMessage, setOneTimeMessage] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
   const [unreadMessages, setUnreadMessages] = useState({});
@@ -54,6 +53,23 @@ const Chat = ({ user, token, onLogout }) => {
   const [contactStatus, setContactStatus] = useState({});
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [syncFile, setSyncFile] = useState(null);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('info');
+
+  const showSnackbar = (message, severity = 'info') => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setSnackbarOpen(true);
+  };
+
+   const handleSnackbarClose = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setSnackbarOpen(false);
+    // setSnackbarAction(null);
+  };
 
   const decryptFile = async (encryptedFileData, encryptedAESKey, aesIV) => {
     try {
@@ -494,6 +510,7 @@ const Chat = ({ user, token, onLogout }) => {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await response.json();
+        const senderUsername = data.username || senderId;
         console.log('User data:', data);
 
         let currentContacts = contacts;
@@ -533,9 +550,30 @@ const Chat = ({ user, token, onLogout }) => {
         setNewMessageState(newMsg);
 
         scrollToBottom();
+
+        const messageTime = new Date(newMsg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const messageDate = new Date(newMsg.timestamp).toLocaleDateString();
+      const snackbarContent = (
+        <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+              {senderUsername}
+            </Typography>
+            <Typography variant="caption" sx={{ ml: 1 }}>
+              {messageDate} {messageTime}
+            </Typography>
+          </Box>
+        <Typography variant="body2">
+          {newMsg.decryptedMessage?.substring(0, 50) || ''}
+          {newMsg.decryptedMessage?.length > 50 ? '...' : ''}
+        </Typography>
+      </Box>
+      );
+      showSnackbar(snackbarContent, 'info');
+
       }
     },
-    [user, token, scrollToBottom, contacts, fetchContacts]
+    [user, token, scrollToBottom, contacts, fetchContacts, receiverProfile]
   );
 
   const handleNewOneTimeMessage = useCallback(async (messageId, chatId, senderId, timestamp) => {
@@ -736,6 +774,22 @@ const Chat = ({ user, token, onLogout }) => {
       setNewMessageState(newMsg);
 
       scrollToBottom();
+
+      const chatName = (await axios.get(`http://localhost:5038/api/chat/${chatId}`, { headers: { Authorization: `Bearer ${token}` } })).data.name;
+      const senderUsername = (await axios.get(`http://localhost:5038/api/users/${senderId}/email`, { headers: { Authorization: `Bearer ${token}` } })).data.username;
+      const messageTime = new Date(newMsg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const messageDate = new Date(newMsg.timestamp).toLocaleDateString();
+
+      const snackbarContent = (
+        <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>{senderUsername} in {chatName}</Typography>
+            <Typography variant="caption" sx={{ ml: 1 }}>{messageDate} {messageTime}</Typography>
+          </Box>
+          <Typography variant="body2">{newMsg.decryptedMessage.substring(0, 50)}{newMsg.decryptedMessage.length > 50 ? '...' : ''}</Typography>
+        </Box>
+      );
+      showSnackbar(snackbarContent, 'info');
     }
   }, [user, token, scrollToBottom]);
 
@@ -798,6 +852,22 @@ const Chat = ({ user, token, onLogout }) => {
       setNewMessageState(newMsg);
 
       scrollToBottom();
+
+      const senderUsername = (await axios.get(`http://localhost:5038/api/users/${senderId}/email`, { headers: { Authorization: `Bearer ${token}` } })).data.username;
+      const chatName = isGroup ? (chats.find(c => c.id === chatId)?.name || 'Unknown Group') : senderUsername;
+      const messageTime = new Date(newMsg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const messageDate = new Date(newMsg.timestamp).toLocaleDateString();
+
+      const snackbarContent = (
+        <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>{senderUsername} {isGroup ? `in ${chatName}` : ''}</Typography>
+            <Typography variant="caption" sx={{ ml: 1 }}>{messageDate} {messageTime}</Typography>
+          </Box>
+          <Typography variant="body2">{newMsg.decryptedMessage?.substring(0, 50) || ''}{newMsg.decryptedMessage?.length > 50 ? '...' : ''}</Typography>
+        </Box>
+      );
+      showSnackbar(snackbarContent, 'info');
     }
   };
 
@@ -808,6 +878,7 @@ const Chat = ({ user, token, onLogout }) => {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
+      const senderUsername = data.username || senderId;
   
       let currentContacts = contacts;
       if (contacts.length === 0) {
@@ -875,7 +946,24 @@ const Chat = ({ user, token, onLogout }) => {
       }
   
       setFiles((prev) => [...prev, newFile]);
+      setNewMessageState(fileName);
+
       scrollToBottom();
+
+      const chatName = senderUsername;
+      const messageTime = new Date(newFile.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const messageDate = new Date(newFile.timestamp).toLocaleDateString();
+
+      const snackbarContent = (
+        <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>{senderUsername}</Typography>
+            <Typography variant="caption" sx={{ ml: 1 }}>{messageDate} {messageTime}</Typography>
+          </Box>
+          <Typography variant="body2">New pending file: "{fileName}"</Typography>
+        </Box>
+      );
+      showSnackbar(snackbarContent, 'info');
     }
   }, [user, token, contacts, fetchContacts, receiverProfile, receiverChatId, scrollToBottom]);
 
@@ -947,7 +1035,25 @@ const Chat = ({ user, token, onLogout }) => {
       }
 
       setFiles((prev) => [...prev, newFile]);
+      setNewMessageState(fileName);
+
       scrollToBottom();
+
+      const senderUsername = (await axios.get(`http://localhost:5038/api/users/${senderId}/email`, { headers: { Authorization: `Bearer ${token}` } })).data.username;
+      const chatName = senderUsername;
+      const messageTime = new Date(newFile.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const messageDate = new Date(newFile.timestamp).toLocaleDateString();
+
+      const snackbarContent = (
+        <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>{senderUsername} {isGroup ? `in ${chatName}` : ''}</Typography>
+            <Typography variant="caption" sx={{ ml: 1 }}>{messageDate} {messageTime}</Typography>
+          </Box>
+          <Typography variant="body2">New pending file: "{fileName}"</Typography>
+        </Box>
+      );
+      showSnackbar(snackbarContent, 'info');
     }
   }, [user, token, receiverProfile, scrollToBottom]);
 
@@ -1765,6 +1871,22 @@ const Chat = ({ user, token, onLogout }) => {
         )}
       </Paper>
     </Box>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={5000} // Скрывать через 5 секунд
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }} // Позиция Snackbar
+      >
+        <Alert
+          onClose={handleSnackbarClose}
+          severity={snackbarSeverity}
+          sx={{ width: '100%', display: 'flex', alignItems: 'center' }}
+        >
+          {/* Содержимое Snackbar, которое мы формируем в showSnackbar */}
+          {snackbarMessage}
+          {/* Если нужно, можете добавить кнопку действия, как в предыдущих примерах, но вы просили ее убрать для этой задачи */}
+        </Alert>
+      </Snackbar>
   </Box>
   );
 };
