@@ -24,21 +24,6 @@ public class UserEntityTypeConfiguration : IEntityTypeConfiguration<UserEntity>
             .WithOne(c => c.User)
             .HasForeignKey(c => c.UserId)
             .OnDelete(DeleteBehavior.Cascade);
-
-        builder.HasMany(u => u.ImageEntities)
-            .WithOne(i => i.Owner)
-            .HasForeignKey(i => i.OwnerId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        builder.HasMany(u => u.SentMessages)
-            .WithOne(m => m.Sender)
-            .HasForeignKey(m => m.SenderId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        builder.HasMany(u => u.ReceivedMessages)
-            .WithOne(m => m.Receiver)
-            .HasForeignKey(m => m.ReceiverId)
-            .OnDelete(DeleteBehavior.Cascade);
         
         builder.HasMany(u => u.ChatParticipations)
             .WithOne(cp => cp.User)

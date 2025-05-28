@@ -638,7 +638,7 @@ export const useChatHandlers = (user, token, contacts, chats, receiverProfile, r
         }
         return prev;
       });
-    }, []);
+    }, [setFriendRequests]);
 
   const handleFriendRequestConfirmed = useCallback((userId) => {
       alert(`User ${userId} has confirmed your friend request`);

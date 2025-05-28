@@ -14,8 +14,5 @@ public class UserEntity
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public ICollection<ContactEntity> Contacts { get; set; }
-    public ICollection<ImageEntity> ImageEntities { get; set; }
-    public ICollection<MessageMetadata> SentMessages { get; set; }
-    public ICollection<MessageMetadata> ReceivedMessages { get; set; }
     public ICollection<ChatParticipantEntity> ChatParticipations { get; set; }
 }

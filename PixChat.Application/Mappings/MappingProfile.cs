@@ -9,10 +9,7 @@ public class MappingProfile: Profile
     public MappingProfile()
     {
         CreateMap<ContactEntity, ContactDto>();
-        CreateMap<ImageEntity, ImageDto>()
-            .ForMember("ImageUrl", opt
-                => opt.MapFrom<ImagePictureResolver, string>(c => c.PictureFileName));
-        CreateMap<MessageMetadata, MessageMetadataDto>();
+        
         CreateMap<UserEntity, UserDto>()
             .ForMember("ProfilePictureUrl", opt
                 => opt.MapFrom<UserPictureResolver, string>(c => c.ProfilePictureFileName));
@@ -31,5 +28,7 @@ public class MappingProfile: Profile
 
         CreateMap<OneTimeMessage, OneTimeMessageDto>();
         CreateMap<OneTimeMessageDto, OneTimeMessage>();
+        CreateMap<OfflineMessageDto, OfflineMessageEntity>();
+        CreateMap<OfflineMessageFileDto, OfflineMessageFileEntity>();
     }
 }

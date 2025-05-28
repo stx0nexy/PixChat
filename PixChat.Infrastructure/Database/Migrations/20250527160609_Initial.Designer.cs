@@ -12,7 +12,7 @@ using PixChat.Infrastructure.Database;
 namespace PixChat.Infrastructure.Database.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250407110457_Initial")]
+    [Migration("20250527160609_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -141,66 +141,6 @@ namespace PixChat.Infrastructure.Database.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("FriendRequests");
-                });
-
-            modelBuilder.Entity("PixChat.Core.Entities.ImageEntity", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime>("LastUsed")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("OwnerId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("PictureFileName")
-                        .IsRequired()
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OwnerId");
-
-                    b.ToTable("Images");
-                });
-
-            modelBuilder.Entity("PixChat.Core.Entities.MessageMetadata", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("MessageStatus")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<int>("ReceiverId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("SenderId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("SentAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ReceiverId");
-
-                    b.HasIndex("SenderId");
-
-                    b.ToTable("Messages");
                 });
 
             modelBuilder.Entity("PixChat.Core.Entities.OfflineMessageEntity", b =>
@@ -503,36 +443,6 @@ namespace PixChat.Infrastructure.Database.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("PixChat.Core.Entities.ImageEntity", b =>
-                {
-                    b.HasOne("PixChat.Core.Entities.UserEntity", "Owner")
-                        .WithMany("ImageEntities")
-                        .HasForeignKey("OwnerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Owner");
-                });
-
-            modelBuilder.Entity("PixChat.Core.Entities.MessageMetadata", b =>
-                {
-                    b.HasOne("PixChat.Core.Entities.UserEntity", "Receiver")
-                        .WithMany("ReceivedMessages")
-                        .HasForeignKey("ReceiverId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("PixChat.Core.Entities.UserEntity", "Sender")
-                        .WithMany("SentMessages")
-                        .HasForeignKey("SenderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Receiver");
-
-                    b.Navigation("Sender");
-                });
-
             modelBuilder.Entity("PixChat.Core.Entities.ChatEntity", b =>
                 {
                     b.Navigation("Participants");
@@ -543,12 +453,6 @@ namespace PixChat.Infrastructure.Database.Migrations
                     b.Navigation("ChatParticipations");
 
                     b.Navigation("Contacts");
-
-                    b.Navigation("ImageEntities");
-
-                    b.Navigation("ReceivedMessages");
-
-                    b.Navigation("SentMessages");
                 });
 #pragma warning restore 612, 618
         }

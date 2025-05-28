@@ -23,6 +23,4 @@ public interface IUserRepository
     Task UpdateUserStatusAsync(int userId, string status);
 
     Task<string> SaveUserImageAsync(int userId, Stream imageStream, string imageFileName);
-    Task<string> GetPublicKeyAsync(int userId);
-    Task<string> GetPrivateKeyAsync(int userId);
 }

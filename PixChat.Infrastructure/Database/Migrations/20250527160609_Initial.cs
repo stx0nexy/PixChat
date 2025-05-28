@@ -181,56 +181,6 @@ namespace PixChat.Infrastructure.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Images",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    PictureFileName = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: false),
-                    OwnerId = table.Column<int>(type: "integer", nullable: false),
-                    LastUsed = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Images", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Images_Users_OwnerId",
-                        column: x => x.OwnerId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Messages",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    SenderId = table.Column<int>(type: "integer", nullable: false),
-                    ReceiverId = table.Column<int>(type: "integer", nullable: false),
-                    SentAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    MessageStatus = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Messages", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Messages_Users_ReceiverId",
-                        column: x => x.ReceiverId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Messages_Users_SenderId",
-                        column: x => x.SenderId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "ChatParticipants",
                 columns: table => new
                 {
@@ -284,21 +234,6 @@ namespace PixChat.Infrastructure.Database.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Images_OwnerId",
-                table: "Images",
-                column: "OwnerId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Messages_ReceiverId",
-                table: "Messages",
-                column: "ReceiverId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Messages_SenderId",
-                table: "Messages",
-                column: "SenderId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_OfflineMessageFiles_ChatId",
                 table: "OfflineMessageFiles",
                 column: "ChatId");
@@ -331,12 +266,6 @@ namespace PixChat.Infrastructure.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "FriendRequests");
-
-            migrationBuilder.DropTable(
-                name: "Images");
-
-            migrationBuilder.DropTable(
-                name: "Messages");
 
             migrationBuilder.DropTable(
                 name: "OfflineMessageFiles");

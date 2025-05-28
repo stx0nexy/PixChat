@@ -4,7 +4,6 @@ using PixChat.Application.DTOs;
 using PixChat.Application.Interfaces.Services;
 using PixChat.Application.Requests;
 using PixChat.Application.Services;
-using PixChat.Infrastructure.Database;
 
 namespace PixChat.API.Controllers;
 
@@ -12,17 +11,16 @@ namespace PixChat.API.Controllers;
 [ApiController]
 public class AuthController : ControllerBase
 {
-    private readonly ApplicationDbContext _dbContext;
     private readonly IPasswordHasher<UserDto> _passwordHasher;
     private readonly IJwtTokenService _jwtTokenService;
     private readonly IUserService _userService;
     private readonly IEmailService _emailService;
     private readonly TwoFactorService _twoFactorService;
 
-    public AuthController(ApplicationDbContext dbContext, IPasswordHasher<UserDto> passwordHasher,
-        IJwtTokenService jwtTokenService, IUserService userService, IEmailService emailService, TwoFactorService twoFactorService)
+    public AuthController(IPasswordHasher<UserDto> passwordHasher,
+        IJwtTokenService jwtTokenService, IUserService userService,
+        IEmailService emailService, TwoFactorService twoFactorService)
     {
-        _dbContext = dbContext;
         _passwordHasher = passwordHasher;
         _jwtTokenService = jwtTokenService;
         _userService = userService;
@@ -33,7 +31,7 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
-        if (_dbContext.Users.Any(u => u.Email == request.Email))
+        if (await _userService.UserExistsByEmailAsync(request.Email))
         {
             return BadRequest("Email already exists");
         }

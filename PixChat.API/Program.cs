@@ -9,10 +9,10 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using PixChat.API.HubConfig;
 using PixChat.Application;
 using PixChat.Application.Config;
 using PixChat.Application.DTOs;
-using PixChat.Application.HubConfig;
 using PixChat.Application.Interfaces.Services;
 using PixChat.Application.Services;
 using PixChat.Core.Interfaces;
@@ -45,24 +45,19 @@ builder.Services.AddControllers(options =>
     .AddJsonOptions(options => options.JsonSerializerOptions.WriteIndented = true);
 
 builder.Services.Configure<ChatConfig>(configuration);
-builder.Services.Configure<ImageConfig>(builder.Configuration.GetSection("ImageSettings"));
+builder.Services.Configure<ImageConfig>(builder.Configuration.GetSection("ImageConfig"));
 
 builder.Services.AddSingleton<IPasswordHasher<UserDto>, PasswordHasher<UserDto>>();
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 builder.Services.AddTransient<IParticipantService, ParticipantService>();
 builder.Services.AddTransient<IChatService, ChatService>();
 builder.Services.AddTransient<IContactService, ContactService>();
-builder.Services.AddTransient<IImageService, ImageService>();
 builder.Services.AddTransient<IKeyService, KeyService>();
-builder.Services.AddTransient<IMessageMetadataService, MessageMetadataService>();
 builder.Services.AddTransient<ISteganographyService, SteganographyService>(sp =>
 {
-    var keyService = sp.GetRequiredService<IKeyService>();
+    var imageConfigOptions = sp.GetRequiredService<IOptions<ImageConfig>>();
     var logger = sp.GetRequiredService<ILogger<SteganographyService>>();
-    
-    var imageSettings = sp.GetRequiredService<IOptions<ImageConfig>>().Value;
-
-    return new SteganographyService( logger);
+    return new SteganographyService( logger, imageConfigOptions);
 });
 builder.Services.AddTransient<IUserService, UserService>();
 builder.Services.AddTransient<IOfflineMessageService, OfflineMessageService>();
@@ -73,12 +68,22 @@ builder.Services.AddTransient<IEncryptionService, EncryptionService>();
 
 
 builder.Services.AddTransient<IContactRepository, ContactRepository>();
-builder.Services.AddTransient<IImageRepository, ImageRepository>();
-builder.Services.AddTransient<IMessageMetadataRepository, MessageMetadataRepository>();
-builder.Services.AddTransient<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>(provider =>
+{
+    var imageConfigOptions = provider.GetRequiredService<IOptions<ImageConfig>>();
+    var imageDirectory = imageConfigOptions.Value.ImageFolderPath;
+
+    var dbContextWrapper = provider.GetRequiredService<IDbContextWrapper<ApplicationDbContext>>();
+    var logger = provider.GetRequiredService<ILogger<UserRepository>>();
+
+    return new UserRepository(dbContextWrapper, logger, imageDirectory);
+});
+
 builder.Services.AddTransient<IChatRepository, ChatRepository>();
 builder.Services.AddTransient<IChatParticipantRepository, ChatParticipantRepository>();
 builder.Services.AddTransient<IOneTimeMessageRepository, OneTimeMessageRepository>();
+builder.Services.AddTransient<IOfflineMessageRepository, OfflineMessageRepository>();
+builder.Services.AddTransient<IUserKeyRepository, UserKeyRepository>();
 
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<TwoFactorService>();

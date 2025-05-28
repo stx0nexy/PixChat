@@ -1,118 +1,192 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using PixChat.Core.Entities;
+using PixChat.Core.Interfaces;
 using PixChat.Core.Interfaces.Repositories;
 using PixChat.Infrastructure.Database;
+using PixChat.Infrastructure.ExternalServices;
 
 namespace PixChat.Infrastructure.Repositories;
 
-public class ContactRepository : IContactRepository
+public class ContactRepository : BaseDataService, IContactRepository
 {
-    private readonly ApplicationDbContext _context;
-
-    public ContactRepository(ApplicationDbContext context)
+    public ContactRepository(
+        IDbContextWrapper<ApplicationDbContext> dbContextWrapper,
+        ILogger<ContactRepository> logger) : base(dbContextWrapper, logger)
     {
-        _context = context;
     }
 
-    public async Task<ContactEntity> GetContactAsync(int userId, int contactUserId)
+    public async Task<ContactEntity?> GetContactAsync(int userId, int contactUserId)
     {
-        return (await _context.Contacts
-            .FirstOrDefaultAsync(c => c.UserId == userId && c.ContactUserId == contactUserId))!;
+        return await ExecuteSafeAsync(async () =>
+        {
+            return (await Context.Contacts
+                .FirstOrDefaultAsync(c => c.UserId == userId && c.ContactUserId == contactUserId)); 
+        });
     }
 
     public async Task<bool> IsContactBlockedAsync(int userId, int contactUserId)
     {
-        var contact = await GetContactAsync(userId, contactUserId);
-        return contact.IsBlockedByUser;
+        return await ExecuteSafeAsync(async () =>
+        {
+            var contact = await Context.Contacts
+                .FirstOrDefaultAsync(c => c.UserId == userId && c.ContactUserId == contactUserId);
+            
+            return contact?.IsBlockedByUser ?? false;
+        });
     }
 
     public async Task AddContactAsync(int userId, int contactUserId, bool isBlocked)
     {
-        var contactEntity = new ContactEntity
+        await ExecuteSafeAsync(async () =>
         {
-            UserId = userId,
-            ContactUserId = contactUserId,
-            IsBlockedByUser = isBlocked,
-            IsBlockedByContact = isBlocked
-        };
+            var contactEntity = new ContactEntity
+            {
+                UserId = userId,
+                ContactUserId = contactUserId,
+                IsBlockedByUser = isBlocked,
+                IsBlockedByContact = isBlocked
+            };
 
-        await _context.Contacts.AddAsync(contactEntity);
-        await _context.SaveChangesAsync();
+            await Context.Contacts.AddAsync(contactEntity);
+            await Context.SaveChangesAsync();    
+        });
+        
     }
 
     public async Task RemoveContactAsync(int userId, int contactUserId)
     {
-        var contact = await GetContactAsync(userId, contactUserId);
-        if (true)
+        await ExecuteSafeAsync(async () =>
         {
-            _context.Contacts.Remove(contact);
-            await _context.SaveChangesAsync();
-        }
+            var contact = await Context.Contacts
+                .FirstOrDefaultAsync(c => c.UserId == userId && c.ContactUserId == contactUserId);
+
+            if (contact != null)
+            {
+                Context.Contacts.Remove(contact);
+                await Context.SaveChangesAsync();
+            }
+            else
+            {
+                _logger.LogWarning("Contact with userId {UserId} and contactUserId {ContactUserId} not found for removal.",
+                    userId, contactUserId);
+            }
+        });
     }
 
     public async Task<IEnumerable<ContactEntity>> GetAllContactsAsync(int userId)
     {
-        return await _context.Contacts
-                             .Where(c => c.UserId == userId)
-                             .ToListAsync();
+        return await ExecuteSafeAsync(async () =>
+        {
+            return await Context.Contacts
+                .Where(c => c.UserId == userId)
+                .ToListAsync();
+        });
     }
 
     public async Task UpdateContactBlockStatusAsync(int userId, int contactUserId, bool isBlocked)
     {
-        var contact = await GetContactAsync(userId, contactUserId);
-        var user = await GetContactAsync(contactUserId, userId);
-
-        if (contact == null || user == null)
+        await ExecuteSafeAsync(async () =>
         {
-            throw new InvalidOperationException("Contact not found");
-        }
+            var contactForUser = await Context.Contacts
+                .FirstOrDefaultAsync(c => c.UserId == userId && c.ContactUserId == contactUserId);
 
-        contact.IsBlockedByUser = isBlocked;
-        user.IsBlockedByContact = isBlocked;
+            var contactForContactUser = await Context.Contacts
+                .FirstOrDefaultAsync(c => c.UserId == contactUserId && c.ContactUserId == userId);
 
-        await _context.SaveChangesAsync();
+            if (contactForUser != null)
+            {
+                contactForUser.IsBlockedByUser = isBlocked;
+            }
+            else
+            {
+                _logger.LogWarning("Contact entry for user {UserId} and contact {ContactUserId} not found during block status update.", userId, contactUserId);
+            }
+
+            if (contactForContactUser != null)
+            {
+                contactForContactUser.IsBlockedByContact = isBlocked;
+            }
+            else
+            {
+                _logger.LogWarning("Contact entry for user {ContactUserId} and contact {UserId} not found during block status update.", contactUserId, userId);
+            }
+
+            if (contactForUser != null || contactForContactUser != null)
+            {
+                await Context.SaveChangesAsync();
+            }
+            else
+            {
+                _logger.LogInformation("No contact entries found for update of block status between {UserId} and {ContactUserId}.", userId, contactUserId);
+            }
+        });
     }
 
     public async Task<IEnumerable<ContactEntity>> GetBlockedContactsAsync(int userId)
     {
-        return await _context.Contacts
-                             .Where(c => c.UserId == userId && c.IsBlockedByUser)
-                             .ToListAsync();
+        return await ExecuteSafeAsync(async () =>
+        {
+            return await Context.Contacts
+                .Where(c => c.UserId == userId && c.IsBlockedByUser)
+                .ToListAsync();    
+        });
+        
     }
 
     public async Task SendFriendRequestAsync(int userId, int contactUserId)
     {
-        var friendRequestEntity = new FriendRequestEntity()
+        await ExecuteSafeAsync(async () =>
         {
-            UserId = userId,
-            ContactUserId = contactUserId,
-            Status = false
-        };
+            var friendRequestEntity = new FriendRequestEntity()
+            {
+                UserId = userId,
+                ContactUserId = contactUserId,
+                Status = false
+            };
 
-        await _context.FriendRequests.AddAsync(friendRequestEntity);
-        await _context.SaveChangesAsync();
+            await Context.FriendRequests.AddAsync(friendRequestEntity);
+            await Context.SaveChangesAsync();
+        });
     }
 
     public async Task<FriendRequestEntity> GetFriendRequestAsync(int userId, int contactUserId)
     {
-        return (await _context.FriendRequests
-            .FirstOrDefaultAsync(c => c.UserId == userId && c.ContactUserId == contactUserId))!;
+        return await ExecuteSafeAsync(async () =>
+        {
+            return (await Context.FriendRequests
+                .FirstOrDefaultAsync(c => c.UserId == userId && c.ContactUserId == contactUserId))!;    
+        });
+        
     }
 
     public async Task<IEnumerable<FriendRequestEntity>> GetFriendRequestsAsync(int contactUserId)
     {
-        return (await _context.FriendRequests
-            .Where(c => c.ContactUserId == contactUserId).ToListAsync());
+        return await ExecuteSafeAsync(async () =>
+        {
+            return (await Context.FriendRequests
+                .Where(c => c.ContactUserId == contactUserId).ToListAsync()); 
+        });
     }
     
     public async Task RemoveFriendRequestAsync(int userId, int contactUserId)
     {
-        var friendRequest = await GetFriendRequestAsync(userId, contactUserId);
-        if (true)
+        await ExecuteSafeAsync(async () =>
         {
-            _context.FriendRequests.Remove(friendRequest);
-            await _context.SaveChangesAsync();
-        }
+            var friendRequest = await Context.FriendRequests
+                .FirstOrDefaultAsync(fr => fr.UserId == userId && fr.ContactUserId == contactUserId);
+
+            if (friendRequest != null)
+            {
+                Context.FriendRequests.Remove(friendRequest);
+                await Context.SaveChangesAsync();
+            }
+            else
+            {
+                _logger.LogWarning("Friend request from user {UserId} to contact {ContactUserId} not found for removal.",
+                    userId, contactUserId);
+            }
+        });
     }
     
 }

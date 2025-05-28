@@ -5,18 +5,21 @@ using PixChat.Application.Interfaces.Services;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using Microsoft.Extensions.Options;
+using PixChat.Application.Config;
 
 namespace PixChat.Application.Services;
 
 public class SteganographyService : ISteganographyService
 {
     private readonly ILogger<SteganographyService> _logger;
-    private static readonly string ImageFolderPath = @"C:\Users\nykol\RiderProjects\PixChat\PixChat.API\Proxy\assets\images";
     private const string EndMarker = "|X7K9P2M|";
+    private readonly string _imageFolderPath;
 
-    public SteganographyService(ILogger<SteganographyService> logger)
+    public SteganographyService(ILogger<SteganographyService> logger, IOptions<ImageConfig> imageConfig)
     {
         _logger = logger;
+        _imageFolderPath = imageConfig.Value.ImageFolderPath;
     }
 
     public byte[] EmbedMessage(byte[] image, string fullMessage, string key)
@@ -152,7 +155,7 @@ public class SteganographyService : ISteganographyService
 
     public byte[] GetRandomImage()
     {
-        var files = Directory.GetFiles(ImageFolderPath, "*.png");
+        var files = Directory.GetFiles(_imageFolderPath, "*.png");
         if (files.Length == 0)
         {
             throw new FileNotFoundException("No images found in the folder.");

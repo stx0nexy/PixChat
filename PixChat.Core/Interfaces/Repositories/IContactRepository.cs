@@ -4,7 +4,7 @@ namespace PixChat.Core.Interfaces.Repositories;
 
 public interface IContactRepository
 {
-    Task<ContactEntity> GetContactAsync(int userId, int contactUserId);
+    Task<ContactEntity?> GetContactAsync(int userId, int contactUserId);
     
     Task<bool> IsContactBlockedAsync(int userId, int contactUserId);
     

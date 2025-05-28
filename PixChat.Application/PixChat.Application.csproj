@@ -19,7 +19,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\PixChat.Infrastructure\PixChat.Infrastructure.csproj" />
+      <ProjectReference Include="..\PixChat.Core\PixChat.Core.csproj" />
     </ItemGroup>
 
 </Project>

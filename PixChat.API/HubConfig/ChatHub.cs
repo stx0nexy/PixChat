@@ -1,16 +1,13 @@
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
-using System.Threading.Tasks;
-using PixChat.Application.Interfaces.Services;
-using System.Linq;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.Extensions.Logging;
-using PixChat.Core.Entities;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
+using PixChat.Application.DTOs;
+using PixChat.Application.Interfaces.Services;
 
-namespace PixChat.Application.HubConfig
+namespace PixChat.API.HubConfig
 {
    [Authorize]
     public class ChatHub : Hub
@@ -146,7 +143,7 @@ namespace PixChat.Application.HubConfig
                         }
                         else
                         {
-                            var offlineMessage = new OfflineMessageEntity
+                            var offlineMessage = new OfflineMessageDto
                             {
                                 SenderId = senderId,
                                 ReceiverId = participant.Email,
@@ -199,7 +196,7 @@ namespace PixChat.Application.HubConfig
                     }
                     else
                     {
-                        var offlineMessage = new OfflineMessageEntity
+                        var offlineMessage = new OfflineMessageDto
                         {
                             SenderId = senderId,
                             ReceiverId = receiverId,
@@ -279,7 +276,7 @@ namespace PixChat.Application.HubConfig
                     }
                     else
                     {
-                        var offlineFileMessage = new OfflineMessageFileEntity
+                        var offlineFileMessage = new OfflineMessageFileDto
                         {
                             SenderId = senderId,
                             ReceiverId = receiverId,
@@ -348,7 +345,7 @@ namespace PixChat.Application.HubConfig
                         }
                         else
                         {
-                            var offlineFileMessage = new OfflineMessageFileEntity
+                            var offlineFileMessage = new OfflineMessageFileDto
                             {
                                 SenderId = senderId,
                                 ReceiverId = participant.Email,

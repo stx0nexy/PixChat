@@ -3,25 +3,23 @@ using Microsoft.Extensions.Logging;
 using PixChat.Application.DTOs;
 using PixChat.Application.Interfaces.Services;
 using PixChat.Core.Entities;
-using PixChat.Core.Interfaces;
 using PixChat.Core.Interfaces.Repositories;
-using PixChat.Infrastructure.Database;
-using PixChat.Infrastructure.ExternalServices;
 
 namespace PixChat.Application.Services;
 
-public class ParticipantService: BaseDataService<ApplicationDbContext>, IParticipantService
+public class ParticipantService: IParticipantService
 {
     private readonly IChatParticipantRepository _chatParticipantRepository;
     private readonly IMapper _mapper;
+    private readonly ILogger<ParticipantService> _logger;
 
     public ParticipantService(
-        IDbContextWrapper<ApplicationDbContext> dbContextWrapper,
-        ILogger<BaseDataService<ApplicationDbContext>> logger,
+        ILogger<ParticipantService> logger,
         IChatParticipantRepository chatParticipantRepository,
         IMapper mapper
-    ) : base(dbContextWrapper, logger)
+    )
     {
+        _logger = logger;
         _chatParticipantRepository = chatParticipantRepository;
         _mapper = mapper;
     }
@@ -35,7 +33,7 @@ public class ParticipantService: BaseDataService<ApplicationDbContext>, IPartici
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred while getting participants by chat ID.");
+            _logger.LogError(ex, "Error occurred while getting participants by chat ID: {ChatId}.", chatId);
             throw;
         }
     }
@@ -51,7 +49,7 @@ public class ParticipantService: BaseDataService<ApplicationDbContext>, IPartici
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred while adding participant to chat.");
+            _logger.LogError(ex, "Error occurred while adding participant to chat. DTO: {@Dto}", dto);
             throw;
         }
     }
@@ -64,7 +62,7 @@ public class ParticipantService: BaseDataService<ApplicationDbContext>, IPartici
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred while removing participant from chat.");
+            _logger.LogError(ex, "Error occurred while removing participant with ID: {ParticipantId}.", participantId);
             throw;
         }
     }
@@ -76,6 +74,7 @@ public class ParticipantService: BaseDataService<ApplicationDbContext>, IPartici
             var participant = await _chatParticipantRepository.GetByIdAsync(dto.Id);
             if (participant == null)
             {
+                _logger.LogWarning("Participant with ID {ParticipantId} not found for update.", dto.Id);
                 throw new KeyNotFoundException($"Participant with ID {dto.Id} not found.");
             }
 
@@ -84,9 +83,8 @@ public class ParticipantService: BaseDataService<ApplicationDbContext>, IPartici
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred while updating participant.");
+            _logger.LogError(ex, "Error occurred while updating participant with ID: {ParticipantId}. DTO: {@Dto}", dto.Id, dto);
             throw;
         }
     }
-    
 }

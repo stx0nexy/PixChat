@@ -9,6 +9,7 @@ public interface IUserService
     Task<UserDto> GetByUsernameAsync(string username);
 
     Task<UserDto> GetByEmailAsync(string email);
+    Task<bool> UserExistsByEmailAsync(string email);
 
     Task<IEnumerable<UserDto>> GetAllAsync();
 

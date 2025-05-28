@@ -1,51 +1,69 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using PixChat.Core.Entities;
+using PixChat.Core.Interfaces;
 using PixChat.Core.Interfaces.Repositories;
 using PixChat.Infrastructure.Database;
+using PixChat.Infrastructure.ExternalServices;
 
 namespace PixChat.Infrastructure.Repositories;
 
-public class ChatParticipantRepository : IChatParticipantRepository
+public class ChatParticipantRepository : BaseDataService, IChatParticipantRepository
 {
-    private readonly ApplicationDbContext _context;
-
-    public ChatParticipantRepository(ApplicationDbContext context)
+    public ChatParticipantRepository(
+        IDbContextWrapper<ApplicationDbContext> dbContextWrapper,
+        ILogger<ChatParticipantRepository> logger) : base(dbContextWrapper, logger)
     {
-        _context = context;
     }
+
 
     public async Task<IEnumerable<ChatParticipantEntity>> GetParticipantsByChatIdAsync(int chatId)
     {
-        return await _context.ChatParticipants
-            .Where(p => p.ChatId == chatId)
-            .ToListAsync();
+        return await ExecuteSafeAsync(async () =>
+        {
+            return await Context.ChatParticipants
+                .Where(p => p.ChatId == chatId)
+                .ToListAsync();
+        });
     }
 
     public async Task<ChatParticipantEntity?> GetByIdAsync(int participantId)
     {
-        return await _context.ChatParticipants
-            .FirstOrDefaultAsync(p => p.Id == participantId);
+        return await ExecuteSafeAsync(async () =>
+        {
+            return await Context.ChatParticipants
+                .FirstOrDefaultAsync(p => p.Id == participantId);
+        });
     }
 
     public async Task AddAsync(ChatParticipantEntity participant)
     {
-        await _context.ChatParticipants.AddAsync(participant);
-        await _context.SaveChangesAsync();
+        await ExecuteSafeAsync(async () =>
+        {
+            await Context.ChatParticipants.AddAsync(participant);
+            await Context.SaveChangesAsync();
+        });
     }
 
     public async Task DeleteAsync(int participantId)
     {
-        var participant = await GetByIdAsync(participantId);
-        if (participant != null)
+        await ExecuteSafeAsync(async () =>
         {
-            _context.ChatParticipants.Remove(participant);
-            await _context.SaveChangesAsync();
-        }
+            var participant = await GetByIdAsync(participantId);
+            if (participant != null)
+            {
+                Context.ChatParticipants.Remove(participant);
+                await Context.SaveChangesAsync();
+            }
+        });
     }
 
     public async Task UpdateAsync(ChatParticipantEntity participant)
     {
-        _context.ChatParticipants.Update(participant);
-        await _context.SaveChangesAsync();
+        await ExecuteSafeAsync(async () =>
+        {
+            Context.ChatParticipants.Update(participant);
+            await Context.SaveChangesAsync();
+        });
     }
 }

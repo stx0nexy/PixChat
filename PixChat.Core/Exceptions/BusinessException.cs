@@ -1,4 +1,4 @@
-namespace PixChat.Infrastructure.Exceptions;
+namespace PixChat.Core.Exceptions;
 
 public class BusinessException : Exception
 {

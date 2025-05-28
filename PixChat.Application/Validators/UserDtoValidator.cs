@@ -20,13 +20,5 @@ public class UserDtoValidator : AbstractValidator<UserDto>
             RuleFor(x => x.Phone)
                 .Matches(@"^\+?[0-9]{10,15}$").WithMessage("Phone number must be between 10 and 15 digits and can start with '+'.");
         });
-
-        RuleFor(x => x.ProfilePictureUrl)
-            .Must(BeValidUrl).When(x => !string.IsNullOrEmpty(x.ProfilePictureUrl)).WithMessage("Profile picture URL is not valid.");
-    }
-
-    private bool BeValidUrl(string url)
-    {
-        return Uri.TryCreate(url, UriKind.Absolute, out Uri result) && (result.Scheme == Uri.UriSchemeHttp || result.Scheme == Uri.UriSchemeHttps);
     }
 }

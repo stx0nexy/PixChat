@@ -1,126 +1,89 @@
-using System.Security.Cryptography;
-using System.Text;
-using Microsoft.EntityFrameworkCore;
+using AutoMapper;
 using Microsoft.Extensions.Logging;
 using PixChat.Application.Interfaces.Services;
-using PixChat.Core.Entities;
-using PixChat.Infrastructure.Database;
+using PixChat.Core.Exceptions;
+using PixChat.Core.Interfaces.Repositories;
 
 namespace PixChat.Application.Services;
 
 public class KeyService : IKeyService
 {
-   private readonly ApplicationDbContext _context;
+    private readonly IUserKeyRepository _userKeyRepository;
+    private readonly IMapper _mapper;
     private readonly ILogger<KeyService> _logger;
 
-    public KeyService(ApplicationDbContext context, ILogger<KeyService> logger)
+    public KeyService(
+        ILogger<KeyService> logger,
+        IUserKeyRepository userKeyRepository,
+        IMapper mapper
+    )
     {
-        _context = context;
         _logger = logger;
+        _userKeyRepository = userKeyRepository;
+        _mapper = mapper;
     }
 
-    public async Task<(string publicKey, string privateKey)> GenerateKeyPairAsync()
+   public async Task<(string publicKey, string privateKey)> GenerateKeyPairAsync()
     {
         try
         {
-            using (RSA rsa = RSA.Create(2048))
-            {
-                string publicKeyPem = ConvertToPem(rsa.ExportSubjectPublicKeyInfo(), "PUBLIC KEY");
-                string privateKeyPem = ConvertToPem(rsa.ExportPkcs8PrivateKey(), "PRIVATE KEY");
-
-                _logger.LogInformation("Generated new RSA key pair in PEM format.");
-                return (publicKeyPem, privateKeyPem);
-            }
+            var result = await _userKeyRepository.GenerateKeyPairAsync();
+            return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating RSA key pair.");
+            _logger.LogError(ex, "Error occurred while generating key pair.");
             throw;
         }
-    }
-
-    private string ConvertToPem(byte[] keyBytes, string keyType)
-    {
-        string base64 = Convert.ToBase64String(keyBytes);
-        string header = $"-----BEGIN {keyType}-----";
-        string footer = $"-----END {keyType}-----";
-        string wrappedBase64 = string.Join("\n", base64.Chunk(64).Select(chunk => new string(chunk)));
-        return $"{header}\n{wrappedBase64}\n{footer}";
     }
 
     public async Task SaveKeysAsync(int userId, string publicKey, string privateKey)
     {
         try
         {
-            var existingKeys = await _context.UserKeys
-                .FirstOrDefaultAsync(k => k.UserId == userId);
-
-            if (existingKeys != null)
-            {
-                existingKeys.PublicKey = publicKey;
-                existingKeys.PrivateKey = privateKey;
-            }
-            else
-            {
-                var userKeys = new UserKeyEntity
-                {
-                    UserId = userId,
-                    PublicKey = publicKey,
-                    PrivateKey = privateKey
-                };
-                _context.UserKeys.Add(userKeys);
-            }
-
-            await _context.SaveChangesAsync();
-            _logger.LogInformation($"Keys saved for userId: {userId}");
+            await _userKeyRepository.SaveKeysAsync(userId, publicKey, privateKey);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Error saving keys for userId: {userId}");
+            _logger.LogError(ex, "Error occurred while saving keys for user {UserId}.", userId);
             throw;
         }
     }
 
-    public async Task<string> GetPublicKeyAsync(int userId)
+    public async Task<string?> GetPublicKeyAsync(int userId)
     {
         try
         {
-            var userKeys = await _context.UserKeys
-                .FirstOrDefaultAsync(k => k.UserId == userId);
-
-            if (userKeys == null)
+            var result = await _userKeyRepository.GetPublicKeyAsync(userId);
+            if (result == null)
             {
-                _logger.LogWarning($"Public key not found for userId: {userId}");
-                throw new Exception($"Public key not found for user: {userId}");
+                _logger.LogWarning("Public key not found for user {UserId}.", userId);
+                throw new BusinessException($"Public key not found for user: {userId}");
             }
-
-            return userKeys.PublicKey;
+            return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Error retrieving public key for userId: {userId}");
+            _logger.LogError(ex, "Error occurred while retrieving public key for user {UserId}.", userId);
             throw;
         }
     }
 
-    public async Task<string> GetPrivateKeyAsync(int userId)
+    public async Task<string?> GetPrivateKeyAsync(int userId)
     {
         try
         {
-            var userKeys = await _context.UserKeys
-                .FirstOrDefaultAsync(k => k.UserId == userId);
-
-            if (userKeys == null)
+            var result = await _userKeyRepository.GetPrivateKeyAsync(userId);
+            if (result == null)
             {
-                _logger.LogWarning($"Private key not found for userId: {userId}");
-                throw new Exception($"Private key not found for user: {userId}");
+                _logger.LogWarning("Private key not found for user {UserId}.", userId);
+                throw new BusinessException($"Private key not found for user: {userId}");
             }
-
-            return userKeys.PrivateKey;
+            return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Error retrieving private key for userId: {userId}");
+            _logger.LogError(ex, "Error occurred while retrieving private key for user {UserId}.", userId);
             throw;
         }
     }

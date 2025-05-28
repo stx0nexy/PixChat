@@ -19,8 +19,4 @@
       <ProjectReference Include="..\PixChat.Core\PixChat.Core.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Database\Migrations\" />
-    </ItemGroup>
-
 </Project>

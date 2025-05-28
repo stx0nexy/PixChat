@@ -12,8 +12,6 @@ public class ApplicationDbContext: DbContext
     }
     
     public DbSet<UserEntity> Users { get; set; }
-    public DbSet<MessageMetadata> Messages { get; set; }
-    public DbSet<ImageEntity> Images { get; set; }
     public DbSet<ContactEntity> Contacts { get; set; }
     public DbSet<OfflineMessageEntity> OfflineMessages { get; set; }
     public DbSet<FriendRequestEntity> FriendRequests { get; set; }
@@ -29,8 +27,6 @@ public class ApplicationDbContext: DbContext
         base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
         modelBuilder.ApplyConfiguration(new UserEntityTypeConfiguration());
-        modelBuilder.ApplyConfiguration(new MessageMetadataEntityTypeConfiguration());
-        modelBuilder.ApplyConfiguration(new ImageEntityTypeConfiguration());
         modelBuilder.ApplyConfiguration(new ContactEntityTypeConfiguration());
         modelBuilder.ApplyConfiguration(new OfflineMessageEntityTypeConfiguration());
         modelBuilder.ApplyConfiguration(new FriendRequestEntityTypeConfiguration());

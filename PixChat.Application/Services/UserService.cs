@@ -3,71 +3,104 @@ using Microsoft.Extensions.Logging;
 using PixChat.Application.DTOs;
 using PixChat.Application.Interfaces.Services;
 using PixChat.Core.Entities;
-using PixChat.Core.Interfaces;
+using PixChat.Core.Exceptions;
 using PixChat.Core.Interfaces.Repositories;
-using PixChat.Infrastructure.Database;
-using PixChat.Infrastructure.ExternalServices;
 
 namespace PixChat.Application.Services;
 
-public class UserService : BaseDataService<ApplicationDbContext>, IUserService
+public class UserService : IUserService
 {
     private readonly IUserRepository _userRepository;
     private readonly IKeyService _keyService;
     private readonly IMapper _mapper;
+    private readonly ILogger<UserService> _logger;
+
 
     public UserService(
-        IDbContextWrapper<ApplicationDbContext> dbContextWrapper,
-        ILogger<BaseDataService<ApplicationDbContext>> logger,
+        ILogger<UserService> logger,
         IUserRepository userRepository,
         IKeyService keyService,
         IMapper mapper)
-        : base(dbContextWrapper, logger)
     {
+        _logger = logger;
         _userRepository = userRepository;
         _keyService = keyService;
         _mapper = mapper;
     }
 
-    public async Task<UserDto> GetByIdAsync(int userId)
+    public async Task<UserDto?> GetByIdAsync(int userId)
     {
-        return await ExecuteSafeAsync(async () =>
+        try
         {
             var result = await _userRepository.GetByIdAsync(userId);
-            return _mapper.Map<UserDto>(result);
-        });
+            return _mapper.Map<UserDto?>(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while fetching user with ID: {UserId}.", userId);
+            throw;
+        }
     }
 
-    public async Task<UserDto> GetByUsernameAsync(string username)
+    public async Task<UserDto?> GetByUsernameAsync(string username)
     {
-        return await ExecuteSafeAsync(async () =>
+        try
         {
             var result = await _userRepository.GetByUsernameAsync(username);
-            return _mapper.Map<UserDto>(result);
-        });
+            return _mapper.Map<UserDto?>(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while fetching user with username: {Username}.", username);
+            throw;
+        }
     }
 
-    public async Task<UserDto> GetByEmailAsync(string email)
+    public async Task<UserDto?> GetByEmailAsync(string email)
     {
-        return await ExecuteSafeAsync(async () =>
+        try
         {
             var result = await _userRepository.GetByEmailAsync(email);
-            return _mapper.Map<UserDto>(result);
-        });
+            return _mapper.Map<UserDto?>(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while fetching user with email: {Email}.", email);
+            throw;
+        }
+    }
+    
+    public async Task<bool> UserExistsByEmailAsync(string email)
+    {
+        try
+        {
+            var user = await _userRepository.GetByEmailAsync(email);
+            return user != null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while checking if user exists by email: {Email}.", email);
+            throw;
+        }
     }
 
     public async Task<IEnumerable<UserDto>> GetAllAsync()
     {
-        return await ExecuteSafeAsync(async () =>
+        try
         {
             var result = await _userRepository.GetAllAsync();
             return result.Select(s => _mapper.Map<UserDto>(s)).ToList();
-        });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while fetching all users.");
+            throw;
+        }
     }
 
     public async Task AddAsync(UserDto user)
     {
-        await ExecuteSafeAsync(async () =>
+        try
         {
             var userEntity = _mapper.Map<UserEntity>(user);
             if (string.IsNullOrEmpty(userEntity.ProfilePictureFileName))
@@ -79,63 +112,121 @@ public class UserService : BaseDataService<ApplicationDbContext>, IUserService
 
             var (publicKey, privateKey) = await _keyService.GenerateKeyPairAsync();
             await _keyService.SaveKeysAsync(userEntity.Id, publicKey, privateKey);
-        });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while adding user with username: {Username}.", user.Username);
+            throw;
+        }
     }
 
     public async Task UpdateAsync(UserDto user)
     {
-        await ExecuteSafeAsync(async () =>
+        try
         {
             var userEntity = _mapper.Map<UserEntity>(user);
             await _userRepository.UpdateAsync(userEntity);
-        });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while updating user with ID: {Id}.", user.Id);
+            throw;
+        }
     }
 
     public async Task DeleteAsync(int userId)
     {
-        await ExecuteSafeAsync(async () =>
+        try
         {
             await _userRepository.DeleteAsync(userId);
-        });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while deleting user with ID: {UserId}.", userId);
+            throw;
+        }
     }
 
-    public async Task<string> GetUserStatusAsync(int userId)
+    public async Task<string?> GetUserStatusAsync(int userId)
     {
-        return await ExecuteSafeAsync(async () =>
+        try
         {
-            return await _userRepository.GetUserStatusAsync(userId);
-        });
+            var status = await _userRepository.GetUserStatusAsync(userId);
+            return status;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while fetching user status for user ID: {UserId}.", userId);
+            throw;
+        }
     }
 
     public async Task UpdateUserStatusAsync(int userId, string status)
     {
-        await ExecuteSafeAsync(async () =>
+        try
         {
-             await _userRepository.UpdateUserStatusAsync(userId, status);
-        });
-    }
-    
-    public async Task<UserDto> UploadUserProfilePictureAsync(int userId, Stream imageStream, string imageFileName)
-    {
-        var fileName = await _userRepository.SaveUserImageAsync(userId, imageStream, imageFileName);
-
-        var userEntity = await _userRepository.GetByIdAsync(userId);
-        return _mapper.Map<UserDto>(userEntity);
-    }
-    
-    public async Task<string> GetPublicKeyAsync(int userId)
-    {
-        return await ExecuteSafeAsync(async () =>
+            await _userRepository.UpdateUserStatusAsync(userId, status);
+        }
+        catch (Exception ex)
         {
-            return await _userRepository.GetPublicKeyAsync(userId);
-        });
+            _logger.LogError(ex, "Error occurred while updating status for user ID: {UserId}.", userId);
+            throw;
+        }
     }
 
-    public async Task<string> GetPrivateKeyAsync(int userId)
+    public async Task<UserDto?> UploadUserProfilePictureAsync(int userId, Stream imageStream, string imageFileName)
     {
-        return await ExecuteSafeAsync(async () =>
+        try
         {
-            return await _userRepository.GetPrivateKeyAsync(userId);
-        });
+            var fileName = await _userRepository.SaveUserImageAsync(userId, imageStream, imageFileName);
+            
+            if (fileName == null)
+            {
+                _logger.LogWarning("Failed to save image or user not found for userId: {UserId}.", userId);
+                throw new BusinessException($"Failed to upload profile picture for user {userId}. User not found or file save error.");
+                return null;
+            }
+
+            var userEntity = await _userRepository.GetByIdAsync(userId);
+            if (userEntity == null)
+            {
+                _logger.LogError("User {UserId} not found immediately after image save and update.", userId);
+                throw new InvalidOperationException($"User {userId} not found after image upload process.");
+            }
+            return _mapper.Map<UserDto>(userEntity);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while uploading profile picture for user ID: {UserId}.", userId);
+            throw;
+        }
+    }
+
+    public async Task<string?> GetPublicKeyAsync(int userId)
+    {
+        try
+        {
+            var publicKey = await _keyService.GetPublicKeyAsync(userId);
+            return publicKey;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while fetching public key for user ID: {UserId}.", userId);
+            throw;
+        }
+    }
+
+    public async Task<string?> GetPrivateKeyAsync(int userId)
+    {
+        try
+        {
+            var privateKey = await _keyService.GetPrivateKeyAsync(userId);
+            return privateKey;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while fetching private key for user ID: {UserId}.", userId);
+            throw;
+        }
     }
 }

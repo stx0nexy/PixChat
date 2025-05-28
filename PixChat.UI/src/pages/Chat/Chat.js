@@ -154,7 +154,8 @@ const Chat = ({ user, token, onLogout }) => {
     setNewOneTimeMessageState,
     showSnackbar,
     fetchContacts,
-    scrollToBottom
+    scrollToBottom,
+    setFriendRequests
   );
 
   const { connection } = useSignalR(
