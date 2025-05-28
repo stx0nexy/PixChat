@@ -87,7 +87,8 @@ public class AuthController : ControllerBase
             return Unauthorized("User not verified");
         }
 
-        if (_passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password) != PasswordVerificationResult.Success)
+        if (_passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password)
+            != PasswordVerificationResult.Success)
         {
             return Unauthorized("Invalid credentials");
         }

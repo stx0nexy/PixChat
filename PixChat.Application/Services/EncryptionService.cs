@@ -68,7 +68,7 @@ private readonly ILogger<EncryptionService> _logger;
         {
             if (string.IsNullOrEmpty(publicKey))
             {
-                throw new ArgumentNullException(nameof(publicKey), "Публичный ключ не может быть пустым.");
+                throw new ArgumentNullException(nameof(publicKey), "The public key cannot be empty.");
             }
 
             using var rsa = RSA.Create();
