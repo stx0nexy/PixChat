@@ -3,7 +3,7 @@ using PixChat.Application.Interfaces.Services;
 
 namespace PixChat.Application.Services;
 
-public class TwoFactorService
+public class TwoFactorService : ITwoFactorService
 {
     private readonly IEmailService _emailService;
     private readonly IMemoryCache _cache;

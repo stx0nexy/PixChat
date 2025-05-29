@@ -86,7 +86,7 @@ builder.Services.AddTransient<IOfflineMessageRepository, OfflineMessageRepositor
 builder.Services.AddTransient<IUserKeyRepository, UserKeyRepository>();
 
 builder.Services.AddMemoryCache();
-builder.Services.AddSingleton<TwoFactorService>();
+builder.Services.AddSingleton<ITwoFactorService, TwoFactorService>();
 
 builder.Services.AddDbContextFactory<ApplicationDbContext>(opts => opts.UseNpgsql(configuration["ConnectionString"]));
 builder.Services.AddScoped<IDbContextWrapper<ApplicationDbContext>, DbContextWrapper<ApplicationDbContext>>();

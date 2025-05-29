@@ -15,11 +15,11 @@ public class AuthController : ControllerBase
     private readonly IJwtTokenService _jwtTokenService;
     private readonly IUserService _userService;
     private readonly IEmailService _emailService;
-    private readonly TwoFactorService _twoFactorService;
+    private readonly ITwoFactorService  _twoFactorService;
 
     public AuthController(IPasswordHasher<UserDto> passwordHasher,
         IJwtTokenService jwtTokenService, IUserService userService,
-        IEmailService emailService, TwoFactorService twoFactorService)
+        IEmailService emailService, ITwoFactorService  twoFactorService)
     {
         _passwordHasher = passwordHasher;
         _jwtTokenService = jwtTokenService;

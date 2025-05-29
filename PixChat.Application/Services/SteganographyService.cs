@@ -77,6 +77,7 @@ public class SteganographyService : ISteganographyService
             byte[] markerBytes = Encoding.UTF8.GetBytes(EndMarker);
             int markerBitsLength = markerBytes.Length * 8;
             int bitsRead = 0;
+            bool endMarkerFound = false;
 
             foreach (var (x, y, channel) in pixelIndices)
             {
@@ -98,21 +99,25 @@ public class SteganographyService : ISteganographyService
                     string currentString = Encoding.UTF8.GetString(currentBytes.ToArray());
                     if (currentString == EndMarker)
                     {
+                        endMarkerFound = true;
                         break;
                     }
                 }
             }
 
-            if (bitsRead < markerBitsLength)
+            if (!endMarkerFound)
             {
-                _logger.LogError("End marker not found in image data.");
-                throw new FormatException("End marker not found in image data.");
+                var ex = new FormatException("End marker not found in image data.");
+                _logger.LogError(ex, "End marker not found in image data.");
+                throw ex;
             }
 
+            messageBits.Length = messageBits.Length - markerBitsLength;
+
             List<byte> messageBytes = new List<byte>();
-            for (int i = 0; i < messageBits.Length - markerBitsLength; i += 8)
+            for (int i = 0; i < messageBits.Length; i += 8) 
             {
-                if (i + 8 > messageBits.Length - markerBitsLength) break;
+                if (i + 8 > messageBits.Length ) break;
                 string byteString = messageBits.ToString(i, 8);
                 messageBytes.Add(Convert.ToByte(byteString, 2));
             }
@@ -123,8 +128,9 @@ public class SteganographyService : ISteganographyService
 
             if (parts.Length != 5)
             {
-                _logger.LogError($"Invalid steganography data format. Expected 5 parts, got {parts.Length}. Full message: '{fullMessage}'");
-                throw new FormatException($"Invalid steganography data format. Expected 3 parts, got {parts.Length}.");
+                var ex = new FormatException($"Invalid steganography data format. Expected 5 parts, got {parts.Length}.");
+                _logger.LogError(ex, $"Invalid steganography data format. Expected 5 parts, got {parts.Length}. Full message: '{fullMessage}'");
+                throw ex;
             }
 
             
@@ -136,7 +142,7 @@ public class SteganographyService : ISteganographyService
             
             try
             {
-                timestamp = DateTime.Parse(parts[2]);
+                timestamp = DateTime.Parse(parts[2], null, System.Globalization.DateTimeStyles.RoundtripKind); 
             }
             catch (FormatException ex)
             {
